@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Ledger | Name City Badminton Club</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #f3f4f6; color: #1f2937; }
+        .glass-card { background: white; border: 1px solid #e5e7eb; border-radius: 1.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
+        .input-light { background-color: #f9fafb; border: 1.5px solid #e5e7eb; color: #111827; transition: all 0.2s; }
+        @media print { 
+            .no-print { display: none !important; } 
+            #openingCard, #totalIncCard, #totalExpCard { display: none !important; }
+            #netCard { grid-column: span 4 !important; width: 100% !important; background: #0f172a !important; color: white !important; -webkit-print-color-adjust: exact; text-align: center; }
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-20">
+
+<div class="max-w-6xl mx-auto px-6 py-10">
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+        <div>
+            <h1 id="clubTitle" class="text-3xl font-bold tracking-tight text-slate-900">🏸 Name City <span class="text-blue-600">Badminton Club</span></h1>
+            <p class="text-slate-500 font-bold tracking-widest uppercase text-sm">Jhang City • Live Sync</p>
+        </div>
+        <button onclick="window.print()" class="no-print bg-slate-900 text-white px-6 py-2 rounded-xl font-semibold hover:bg-slate-800 transition-all shadow-lg">🖨️ Print Report</button>
+    </header>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <div id="openingCard" class="glass-card p-6 border-b-4 border-blue-500">
+            <p class="text-xs font-bold text-slate-500 uppercase mb-2">Opening Balance</p>
+            <input id="lastMonthBalance" type="number" onchange="updateOpening(this.value)" class="bg-transparent text-2xl font-bold w-full outline-none text-slate-800" value="0">
+        </div>
+        <div id="totalIncCard" class="glass-card p-6 border-b-4 border-emerald-500">
+            <p class="text-xs font-bold text-slate-500 uppercase mb-2">Total Income</p>
+            <h2 id="totalIncome" class="text-2xl font-bold text-emerald-600">0</h2>
+        </div>
+        <div id="totalExpCard" class="glass-card p-6 border-b-4 border-rose-500">
+            <p class="text-xs font-bold text-slate-500 uppercase mb-2">Total Expenses</p>
+            <h2 id="totalExpense" class="text-2xl font-bold text-rose-600">0</h2>
+        </div>
+        <div id="netCard" class="glass-card p-6 bg-slate-900 border-none shadow-xl">
+            <p class="text-xs font-bold text-slate-400 uppercase mb-2">Net Cash on Hand</p>
+            <h2 id="netBalance" class="text-2xl font-bold text-white">0</h2>
+        </div>
+    </div>
+
+    <div class="glass-card p-6 mb-10 bg-white border-l-8 border-blue-600">
+        <div class="flex flex-wrap items-center justify-between mb-6 gap-4">
+            <h3 class="font-bold text-lg text-slate-800">📅 View Month: <input type="month" id="viewMonth" onchange="renderAll()" class="bg-blue-50 text-blue-700 px-2 py-1 rounded-lg border-none outline-none"></h3>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100"><p class="text-[10px] font-bold text-emerald-600 uppercase">Monthly Collection</p><p class="text-2xl font-bold">Rs. <span id="monthlyIncome">0</span></p></div>
+            <div class="bg-rose-50 p-4 rounded-2xl border border-rose-100"><p class="text-[10px] font-bold text-rose-600 uppercase">Monthly Spending</p><p class="text-2xl font-bold">Rs. <span id="monthlyExpense">0</span></p></div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="lg:col-span-4 no-print">
+            <section class="glass-card p-6">
+                <h3 class="font-bold text-lg mb-4">👤 Members</h3>
+                <div class="flex gap-2 mb-4"><input id="newMemberName" type="text" placeholder="Name" class="input-light px-3 py-2 rounded-lg w-full"><button onclick="addMember()" class="bg-blue-600 text-white px-4 rounded-lg font-bold">+</button></div>
+                <div id="memberStatusList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+            </section>
+        </div>
+
+        <div class="lg:col-span-4">
+            <section class="glass-card p-6 border-t-4 border-emerald-500">
+                <h3 class="font-bold text-lg mb-4 text-emerald-600">💰 Collection Log</h3>
+                <div class="no-print space-y-2 mb-4">
+                    <input id="fundDate" type="date" class="input-light w-full p-2 rounded-lg text-sm">
+                    <select id="fundMemberSelect" class="input-light w-full p-2 rounded-lg text-sm"></select>
+                    <input id="fundAmount" type="number" placeholder="Amount" class="input-light w-full p-2 rounded-lg text-sm">
+                    <button onclick="addFund()" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-lg">Add Income</button>
+                </div>
+                <table class="w-full text-[11px]"><tbody id="fundHistory" class="divide-y"></tbody></table>
+            </section>
+        </div>
+
+        <div class="lg:col-span-4">
+            <section class="glass-card p-6 border-t-4 border-rose-500">
+                <h3 class="font-bold text-lg mb-4 text-rose-600">💸 Expense Log</h3>
+                <div class="no-print space-y-2 mb-4">
+                    <input id="expDate" type="date" class="input-light w-full p-2 rounded-lg text-sm">
+                    <input id="expDetail" type="text" placeholder="Detail" class="input-light w-full p-2 rounded-lg text-sm">
+                    <input id="expAmount" type="number" placeholder="Amount" class="input-light w-full p-2 rounded-lg text-sm">
+                    <button onclick="addExpense()" class="w-full bg-rose-600 text-white font-bold py-2 rounded-lg">Log Expense</button>
+                </div>
+                <table class="w-full text-[11px]"><tbody id="expenseHistory" class="divide-y"></tbody></table>
+            </section>
+        </div>
+    </div>
+</div>
+
+<script>
+    // YOUR CONFIGURATION
+    const firebaseConfig = {
+        apiKey: "AIzaSyBRBq6D2ArZ-LlIyAfqU_Qjm8-SAmf0_q8",
+        authDomain: "jhangbadminton.firebaseapp.com",
+        projectId: "jhangbadminton",
+        databaseURL: "https://jhangbadminton-default-rtdb.firebaseio.com", // Auto-generated based on project ID
+        storageBucket: "jhangbadminton.firebasestorage.app",
+        messagingSenderId: "845495083243",
+        appId: "1:845495083243:web:523d6f8770d8129f491eae"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const dbRef = firebase.database().ref('clubData');
+    let db = { openingBalance: 0, members: [], funds: [], expenses: [] };
+
+    // Listen for live updates
+    dbRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) { db = data; if(!db.members) db.members=[]; if(!db.funds) db.funds=[]; if(!db.expenses) db.expenses=[]; }
+        renderAll();
+    });
+
+    function save() { dbRef.set(db); }
+    
+    window.onload = () => {
+        document.getElementById('viewMonth').value = new Date().toISOString().substring(0, 7);
+        document.getElementById('fundDate').valueAsDate = new Date();
+        document.getElementById('expDate').valueAsDate = new Date();
+    };
+
+    function addMember() {
+        const val = document.getElementById('newMemberName').value.trim();
+        if(val) { db.members.push(val); document.getElementById('newMemberName').value=""; save(); }
+    }
+
+    function addFund() {
+        const d = document.getElementById('fundDate').value;
+        const n = document.getElementById('fundMemberSelect').value;
+        const a = parseInt(document.getElementById('fundAmount').value);
+        if(d && n && a) { db.funds.unshift({d, n, a, id: Date.now()}); save(); }
+    }
+
+    function addExpense() {
+        const d = document.getElementById('expDate').value;
+        const det = document.getElementById('expDetail').value;
+        const a = parseInt(document.getElementById('expAmount').value);
+        if(d && det && a) { db.expenses.unshift({d, det, a, id: Date.now()}); save(); }
+    }
+
+    function updateOpening(val) { db.openingBalance = parseInt(val) || 0; save(); }
+
+    function renderAll() {
+        const curMonth = document.getElementById('viewMonth').value;
+        document.getElementById('lastMonthBalance').value = db.openingBalance;
+
+        // Totals
+        const totalIn = db.funds.reduce((s, f) => s + f.a, 0);
+        const totalOut = db.expenses.reduce((s, e) => s + e.a, 0);
+        document.getElementById('totalIncome').innerText = totalIn.toLocaleString();
+        document.getElementById('totalExpense').innerText = totalOut.toLocaleString();
+        document.getElementById('netBalance').innerText = `Rs. ${(db.openingBalance + totalIn - totalOut).toLocaleString()}`;
+
+        // Monthly
+        const mIn = db.funds.filter(f => f.d.startsWith(curMonth)).reduce((s,f)=>s+f.a, 0);
+        const mOut = db.expenses.filter(e => e.d.startsWith(curMonth)).reduce((s,e)=>s+e.a, 0);
+        document.getElementById('monthlyIncome').innerText = mIn.toLocaleString();
+        document.getElementById('monthlyExpense').innerText = mOut.toLocaleString();
+
+        // Member List
+        const mDiv = document.getElementById('memberStatusList');
+        const mSelect = document.getElementById('fundMemberSelect');
+        mDiv.innerHTML = ""; mSelect.innerHTML = '<option value="">Select Member...</option>';
+        db.members.sort().forEach(m => {
+            const paid = db.funds.some(f => f.n === m && f.d.startsWith(curMonth));
+            mDiv.innerHTML += `<div class="flex justify-between p-2 bg-slate-50 rounded-lg text-sm"><span>${m}</span>${paid ? '<span class="text-emerald-600 font-bold">PAID</span>':''}</div>`;
+            mSelect.innerHTML += `<option value="${m}">${m}</option>`;
+        });
+
+        // History
+        document.getElementById('fundHistory').innerHTML = db.funds.filter(f => f.d.startsWith(curMonth)).map(f => `<tr><td class="py-2">${f.d.slice(5)}</td><td>${f.n}</td><td class="text-emerald-600">+${f.a}</td></tr>`).join('');
+        document.getElementById('expenseHistory').innerHTML = db.expenses.filter(e => e.d.startsWith(curMonth)).map(e => `<tr><td class="py-2">${e.d.slice(5)}</td><td>${e.det}</td><td class="text-rose-600">-${e.a}</td></tr>`).join('');
+    }
+</script>
+</body>
+</html>
