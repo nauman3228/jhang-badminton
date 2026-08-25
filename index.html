@@ -6,8 +6,6 @@
     <title>City Badminton Club | Jhang Ledger</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
         body { font-family: 'Outfit', sans-serif; background-color: #f3f4f6; color: #1f2937; }
         .glass-card { background: white; border: 1px solid #e5e7eb; border-radius: 1.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
@@ -17,7 +15,6 @@
         @media print { .no-print { display: none !important; } }
         .icon-svg { width: 20px; height: 20px; }
         
-        /* Slider Styles */
         .slider-container { position: relative; overflow: hidden; border-radius: 1.5rem; height: 350px; background-color: #1e293b; }
         .slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1s ease-in-out; }
         .slide.active { opacity: 1; }
@@ -43,7 +40,7 @@
 
     <div class="slider-container mb-10 shadow-2xl no-print">
         <div class="slide active">
-            <img src="https://images.pexels.com/photos/3660204/pexels-photo-3660204.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="Shuttlecock">
+            <img src="https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=1200&q=80" alt="Shuttlecock">
             <div class="slide-overlay">
                 <div>
                     <h2 class="text-3xl font-bold uppercase tracking-tight">The Spirit of Jhang</h2>
@@ -52,7 +49,7 @@
             </div>
         </div>
         <div class="slide">
-            <img src="https://images.pexels.com/photos/2202685/pexels-photo-2202685.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="Badminton Action">
+            <img src="https://images.unsplash.com/photo-1521537634581-0dced2efa2ab?auto=format&fit=crop&w=1200&q=80" alt="Badminton Action">
             <div class="slide-overlay">
                 <div>
                     <h2 class="text-3xl font-bold uppercase tracking-tight">Unleash Your Power</h2>
@@ -61,7 +58,7 @@
             </div>
         </div>
         <div class="slide">
-            <img src="https://images.pexels.com/photos/11501235/pexels-photo-11501235.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="Badminton Racket">
+            <img src="https://images.unsplash.com/photo-1613918108466-292b78a8ef95?auto=format&fit=crop&w=1200&q=80" alt="Badminton Racket">
             <div class="slide-overlay">
                 <div>
                     <h2 class="text-3xl font-bold uppercase tracking-tight">Full Accountability</h2>
@@ -105,14 +102,41 @@
         </div>
     </div>
 
+    <!-- ADMIN SETTINGS & DATABASE CONTROLS -->
     <section class="admin-only glass-card p-6 mb-10 bg-slate-50 border-dashed border-2 border-slate-300">
-        <h3 class="font-bold text-lg mb-4 flex items-center gap-2">⚙️ Admin Settings</h3>
-        <div class="flex flex-wrap gap-4 items-end">
+        <h3 class="font-bold text-lg mb-6 flex items-center gap-2 text-slate-800">⚙️ Admin Settings & Database Tools</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Security Settings -->
             <div>
-                <label class="text-[10px] font-bold text-slate-500 uppercase">Change Admin Password</label>
-                <input id="newPass" type="password" placeholder="New Password" class="input-light block w-48 p-2 rounded-lg text-sm mt-1">
+                <h4 class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-wider">Security</h4>
+                <div class="flex items-end gap-3">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Change Admin Password</label>
+                        <input id="newPass" type="password" placeholder="New Password" class="input-light block w-48 p-2 rounded-lg text-sm mt-1">
+                    </div>
+                    <button onclick="changePassword()" class="bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-800 transition">Update Password</button>
+                </div>
             </div>
-            <button onclick="changePassword()" class="bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-800">Update Password</button>
+
+            <!-- Database Backup & Restore -->
+            <div>
+                <h4 class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-wider">Data Management</h4>
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="exportBackup()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-700 transition flex items-center gap-2">
+                        📥 Download Backup
+                    </button>
+                    
+                    <label class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition cursor-pointer flex items-center gap-2">
+                        📤 Restore Backup
+                        <input type="file" id="restoreFileInput" accept=".json" onchange="restoreBackup(event)" class="hidden">
+                    </label>
+
+                    <button onclick="resetDatabase()" class="bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-rose-700 transition flex items-center gap-2">
+                        ⚠️ Reset Database
+                    </button>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -203,8 +227,10 @@
         </div>
     </div>
 </footer>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-<script>
     // SLIDER LOGIC
     let currentSlide = 0;
     const slides = document.querySelectorAll('.slide');
@@ -215,23 +241,39 @@
         slides[currentSlide].classList.add('active');
     }
     setInterval(nextSlide, 5000);
-
+     
     // FIREBASE INITIALIZATION
-    const firebaseConfig = { apiKey: "AIzaSyBRBq6D2ArZ-LlIyAfqU_Qjm8-SAmf0_q8", authDomain: "jhangbadminton.firebaseapp.com", projectId: "jhangbadminton", databaseURL: "https://jhangbadminton-default-rtdb.firebaseio.com", storageBucket: "jhangbadminton.firebasestorage.app", messagingSenderId: "845495083243", appId: "1:845495083243:web:523d6f8770d8129f491eae" };
-    firebase.initializeApp(firebaseConfig);
-    const dbRef = firebase.database().ref('clubData');
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBRBq6D2ArZ-LlIyAfqU_Qjm8-SAmf0_q8", 
+        authDomain: "jhangbadminton.firebaseapp.com", 
+        projectId: "jhangbadminton", 
+        databaseURL: "https://jhangbadminton-default-rtdb.firebaseio.com", 
+        storageBucket: "jhangbadminton.firebasestorage.app", 
+        messagingSenderId: "845495083243", 
+        appId: "1:845495083243:web:523d6f8770d8129f491eae" 
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const dbInstance = getDatabase(app);
+    const dbRef = ref(dbInstance, 'clubData');
+
     let db = { openingBalance: 0, members: [], funds: [], expenses: [], adminPass: "1234" };
     let isAdmin = false;
 
-    dbRef.on('value', (snapshot) => {
+    onValue(dbRef, (snapshot) => {
         const data = snapshot.val();
-        if (data) { db = data; if(!db.members) db.members=[]; if(!db.funds) db.funds=[]; if(!db.expenses) db.expenses=[]; }
+        if (data) { 
+            db = data; 
+            if(!db.members) db.members=[]; 
+            if(!db.funds) db.funds=[]; 
+            if(!db.expenses) db.expenses=[]; 
+        }
         renderAll();
     });
 
-    function save() { dbRef.set(db); }
+    function save() { set(dbRef, db); }
 
-    function toggleAdmin() {
+    window.toggleAdmin = function() {
         if (!isAdmin) {
             const p = prompt("Enter Password:");
             if (p === db.adminPass) { isAdmin = true; updateUI(true); }
@@ -239,7 +281,7 @@
         } else {
             if (confirm("Logout?")) { isAdmin = false; updateUI(false); }
         }
-    }
+    };
 
     function updateUI(log) {
         document.querySelectorAll('.admin-only').forEach(e => e.style.display = log ? 'block' : 'none');
@@ -249,61 +291,124 @@
         renderAll();
     }
 
-    function changePassword() {
+    window.changePassword = function() {
         const n = document.getElementById('newPass').value;
-        if(n.length >= 4) { db.adminPass = n; save(); alert("Password Changed!"); }
-    }
-
-    window.onload = () => { 
-        document.getElementById('viewMonth').value = new Date().toISOString().substring(0, 7); 
-        document.getElementById('fundDate').valueAsDate = new Date(); 
-        document.getElementById('expDate').valueAsDate = new Date(); 
+        if(n && n.length >= 4) { db.adminPass = n; save(); alert("Password Changed!"); }
     };
 
-    function addMember() { 
+    // BACKUP, RESTORE & RESET UTILITIES
+    window.exportBackup = function() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+        const downloadAnchor = document.createElement('a');
+        const filename = `jhang_badminton_backup_${new Date().toISOString().substring(0, 10)}.json`;
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", filename);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    };
+
+    window.restoreBackup = function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                if (importedData && typeof importedData === 'object') {
+                    if (confirm("Are you sure you want to restore this backup? It will overwrite current live data.")) {
+                        db = {
+                            openingBalance: importedData.openingBalance || 0,
+                            members: importedData.members || [],
+                            funds: importedData.funds || [],
+                            expenses: importedData.expenses || [],
+                            adminPass: importedData.adminPass || db.adminPass
+                        };
+                        save();
+                        alert("Database restored successfully!");
+                    }
+                } else {
+                    alert("Invalid JSON data structure.");
+                }
+            } catch (err) {
+                alert("Failed to parse JSON backup file.");
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    window.resetDatabase = function() {
+        const verify = prompt("Type 'RESET' to confirm clearing all data completely:");
+        if (verify === "RESET") {
+            db = { 
+                openingBalance: 0, 
+                members: [], 
+                funds: [], 
+                expenses: [], 
+                adminPass: db.adminPass || "1234" 
+            };
+            save();
+            alert("Database reset successfully.");
+        } else if (verify !== null) {
+            alert("Reset canceled. You must type 'RESET' exactly.");
+        }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const today = new Date();
+        const localDate = today.toLocaleDateString('en-CA'); 
+        const localMonth = localDate.substring(0, 7);
+        
+        document.getElementById('viewMonth').value = localMonth; 
+        document.getElementById('fundDate').value = localDate; 
+        document.getElementById('expDate').value = localDate; 
+    });
+
+    window.addMember = function() { 
         const v = document.getElementById('newMemberName').value.trim(); 
-        if(v){db.members.push(v); save(); document.getElementById('newMemberName').value="";}
-    }
+        if(v){ db.members.push(v); save(); document.getElementById('newMemberName').value=""; }
+    };
 
-    function deleteMember(i) { if(confirm("Delete Member?")){db.members.splice(i,1); save();}}
-    function editMember(i) { const n = prompt("New Name:", db.members[i]); if(n){db.members[i]=n; save();}}
+    window.deleteMember = function(i) { if(confirm("Delete Member?")){ db.members.splice(i,1); save(); }};
+    window.editMember = function(i) { const n = prompt("New Name:", db.members[i]); if(n){ db.members[i]=n; save(); }};
 
-    function addFund() { 
+    window.addFund = function() { 
         const d = document.getElementById('fundDate').value, 
               n = document.getElementById('fundMemberSelect').value, 
               a = parseInt(document.getElementById('fundAmount').value); 
-        if(d && n && a){ db.funds.unshift({d, n, a, id: Date.now()}); save(); document.getElementById('fundAmount').value=""; }
-    }
+        if(d && n && !isNaN(a)){ db.funds.unshift({d, n, a, id: Date.now()}); save(); document.getElementById('fundAmount').value=""; }
+    };
 
-    function editFund(id) { 
+    window.editFund = function(id) { 
         const i = db.funds.find(f => f.id === id), 
               nD = prompt("Date:", i.d), 
               nA = prompt("Amount:", i.a); 
-        if(nD && nA){ i.d = nD; i.a = parseInt(nA); save(); }
-    }
+        if(nD && nA && !isNaN(parseInt(nA))){ i.d = nD; i.a = parseInt(nA); save(); }
+    };
 
-    function deleteFund(id) { if(confirm("Delete Income Entry?")){ db.funds = db.funds.filter(f=>f.id!==id); save(); }}
+    window.deleteFund = function(id) { if(confirm("Delete Income Entry?")){ db.funds = db.funds.filter(f=>f.id!==id); save(); }};
 
-    function addExpense() { 
+    window.addExpense = function() { 
         const d = document.getElementById('expDate').value, 
               det = document.getElementById('expDetail').value, 
               a = parseInt(document.getElementById('expAmount').value); 
-        if(d && det && a){ db.expenses.unshift({d, det, a, id: Date.now()}); save(); document.getElementById('expDetail').value=""; document.getElementById('expAmount').value=""; }
-    }
+        if(d && det && !isNaN(a)){ db.expenses.unshift({d, det, a, id: Date.now()}); save(); document.getElementById('expDetail').value=""; document.getElementById('expAmount').value=""; }
+    };
 
-    function editExpense(id) { 
+    window.editExpense = function(id) { 
         const i = db.expenses.find(e => e.id === id), 
               nD = prompt("Date:", i.d), 
               nDet = prompt("Detail:", i.det), 
               nA = prompt("Amount:", i.a); 
-        if(nD && nDet && nA){ i.d = nD; i.det = nDet; i.a = parseInt(nA); save(); }
-    }
+        if(nD && nDet && nA && !isNaN(parseInt(nA))){ i.d = nD; i.det = nDet; i.a = parseInt(nA); save(); }
+    };
 
-    function deleteExpense(id) { if(confirm("Delete Expense?")){ db.expenses = db.expenses.filter(e=>e.id!==id); save(); }}
+    window.deleteExpense = function(id) { if(confirm("Delete Expense?")){ db.expenses = db.expenses.filter(e=>e.id!==id); save(); }};
 
-    function updateOpening(v) { db.openingBalance = parseInt(v) || 0; save(); }
+    window.updateOpening = function(v) { db.openingBalance = parseInt(v) || 0; save(); };
 
-    function renderAll() {
+    window.renderAll = function() {
         const m = document.getElementById('viewMonth').value;
         const tin = db.funds.reduce((s,f)=>s+f.a,0), tout = db.expenses.reduce((s,e)=>s+e.a,0);
         
@@ -329,21 +434,21 @@
         
         const es = document.getElementById('historyExpenseSelect'); es.innerHTML = '<option value="">Category...</option>';
         Array.from(new Set(db.expenses.map(e=>e.det))).forEach(d=>{es.innerHTML+=`<option value="${d}">${d}</option>`});
-    }
+    };
 
-    function renderMemberHistory() {
+    window.renderMemberHistory = function() {
         const s = document.getElementById('historyMemberSelect').value; if(!s) return;
         const l = db.funds.filter(f=>f.n===s);
         document.getElementById('historyMemberTable').innerHTML = l.map(f=>`<tr><td>${f.d}</td><td class="text-right font-bold text-emerald-600">${f.a}</td></tr>`).join('');
         document.getElementById('memberHistoryResult').classList.remove('hidden');
-    }
+    };
 
-    function renderExpenseHistory() {
+    window.renderExpenseHistory = function() {
         const s = document.getElementById('historyExpenseSelect').value; if(!s) return;
         const l = db.expenses.filter(e=>e.det===s);
         document.getElementById('historyExpenseTable').innerHTML = l.map(e=>`<tr><td>${e.d}</td><td class="text-right font-bold text-rose-600">${e.a}</td></tr>`).join('');
         document.getElementById('expenseHistoryResult').classList.remove('hidden');
-    }
+    };
 </script>
 </body>
 </html>
